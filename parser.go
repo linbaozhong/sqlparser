@@ -231,32 +231,51 @@ func (p *Parser) scanParenIdent() (Token, string) {
 	return ILLEGAL, ""
 }
 
-func (p *Parser) scanKey() (string, string, error) {
-	var index, column string
+func (p *Parser) scanKeyParenIdent() (Token, []string) {
+	tok, lit := p.scanIgnoreWhitespace()
+	if tok != OPEN_PAREN {
+		return ILLEGAL, []string{lit}
+	}
+	lit1 := make([]string, 0)
+	for tok != CLOSE_PAREN {
+		tok, lit = p.scanIgnoreWhitespace()
+		if tok == IDENT {
+			lit1 = append(lit1, lit)
+		}
+	}
+	return IDENT, lit1
+}
+
+func (p *Parser) scanKey() (string, []string, error) {
+	var (
+		index  string
+		column []string
+	)
 	tok, lit := p.scanIgnoreWhitespace()
 	if tok != KEY {
-		return "", "", fmt.Errorf("found %q, expected KEY", lit)
+		return "", nil, fmt.Errorf("found %q, expected KEY", lit)
 	}
 	// parse index
 	tok, lit = p.scanIgnoreWhitespace()
 	if tok == IDENT {
 		index = lit
 	} else {
-		return "", "", fmt.Errorf("found %q, expected index", lit)
+		return "", nil, fmt.Errorf("found %q, expected index", lit)
 	}
 	// parse column
 	tok, lit = p.scanIgnoreWhitespace()
 	if tok == IDENT {
-		column = lit
+		column = []string{lit}
 	} else if tok == OPEN_PAREN {
 		p.unscan()
-		tok, lit = p.scanParenIdent()
+		var lits []string
+		tok, lits = p.scanKeyParenIdent()
 		if tok != IDENT {
-			return "", "", fmt.Errorf("found %q, expected ", lit)
+			return "", nil, fmt.Errorf("found %q, expected ", lits)
 		}
-		column = lit
+		column = lits
 	} else {
-		return "", "", fmt.Errorf("found %q, expected ident", lit)
+		return "", nil, fmt.Errorf("found %q, expected ident", lit)
 	}
 	return index, column, nil
 }
@@ -303,7 +322,7 @@ func (p *Parser) scanKV() (string, string, error) {
 	tok, lit := p.scanIgnoreWhitespace()
 	tok1, lit1 := p.scanIgnoreWhitespace()
 	tok2, lit2 := p.scanIgnoreWhitespace()
-	if (tok != IDENT && tok != AUTO_INCREMENT) || tok1 != EQUAL || (tok2 != IDENT && tok2 != STRING && tok2 != SIZE) {
+	if (tok != IDENT && tok != AUTO_INCREMENT && tok != COMMENT) || tok1 != EQUAL || (tok2 != IDENT && tok2 != STRING && tok2 != SIZE) {
 		return "", "", fmt.Errorf("found %q, expected key=value", lit+lit1+lit2)
 	}
 	return lit, lit2, nil
@@ -395,14 +414,14 @@ func (p *Parser) parse() (*Table, error) {
 			if err != nil {
 				return nil, err
 			}
-			table.UniqueKeys[k] = append(table.UniqueKeys[k], v)
+			table.UniqueKeys[k] = v
 		case KEY:
 			p.unscan()
 			index, col, err := p.scanKey()
 			if err != nil {
 				return nil, err
 			}
-			table.Keys[index] = append(table.Keys[index], col)
+			table.Keys[index] = col
 		case CONSTRAINT:
 			p.unscan()
 			cos, err := p.scanConstraint()
