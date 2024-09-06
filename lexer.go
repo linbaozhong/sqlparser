@@ -78,7 +78,7 @@ var (
 )
 
 func isWhitespace(ch rune) bool {
-	return ch == ' ' || ch == '\t' || ch == '\n'
+	return ch == ' ' || ch == '\t' || ch == '\n' || ch == '\r'
 }
 
 func isLetter(ch rune) bool {

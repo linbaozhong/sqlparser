@@ -29,9 +29,9 @@ type Constraint struct {
 type Table struct {
 	Name        string
 	Columns     map[string]*Column
-	PrimaryKey  string
-	UniqueKeys  map[string]string
-	Keys        map[string]string // index -> column_name
+	PrimaryKey  []string
+	UniqueKeys  map[string][]string
+	Keys        map[string][]string // index -> column_name
 	Constraints map[string]*Constraint
 	Extras      map[string]string
 }
@@ -333,8 +333,8 @@ func (p *Parser) scanExtra() (map[string]string, error) {
 func (p *Parser) parse() (*Table, error) {
 	table := &Table{
 		Columns:     make(map[string]*Column),
-		UniqueKeys:  make(map[string]string),
-		Keys:        make(map[string]string),
+		UniqueKeys:  make(map[string][]string),
+		Keys:        make(map[string][]string),
 		Constraints: make(map[string]*Constraint),
 		Extras:      make(map[string]string),
 	}
@@ -389,20 +389,20 @@ func (p *Parser) parse() (*Table, error) {
 			if err != nil {
 				return nil, err
 			}
-			table.PrimaryKey = key
+			table.PrimaryKey = append(table.PrimaryKey, key)
 		case UNIQUE:
 			k, v, err := p.scanKey()
 			if err != nil {
 				return nil, err
 			}
-			table.UniqueKeys[k] = v
+			table.UniqueKeys[k] = append(table.UniqueKeys[k], v)
 		case KEY:
 			p.unscan()
 			index, col, err := p.scanKey()
 			if err != nil {
 				return nil, err
 			}
-			table.Keys[index] = col
+			table.Keys[index] = append(table.Keys[index], col)
 		case CONSTRAINT:
 			p.unscan()
 			cos, err := p.scanConstraint()
@@ -426,7 +426,9 @@ func (p *Parser) parse() (*Table, error) {
 		case SEMI_COLON:
 			return table, nil
 		default:
-			return nil, fmt.Errorf("found %q, expected ident or primary or unique or key or constraint", lit)
+			fmt.Printf("found %q, expected ident or primary or unique or key or constraint \n", lit)
+			return nil, nil
+			// return nil, fmt.Errorf("found %q, expected ident or primary or unique or key or constraint", lit)
 		}
 	}
 }
