@@ -14,6 +14,7 @@ type Column struct {
 	Default  interface{}
 	Comment  string
 	Nullable bool
+	Key      string
 	AutoIncr bool
 }
 
@@ -408,11 +409,15 @@ func (p *Parser) parse() (*Table, error) {
 			if err != nil {
 				return nil, err
 			}
+			table.Columns[key].Key = "PRI"
 			table.PrimaryKey = append(table.PrimaryKey, key)
 		case UNIQUE:
 			k, v, err := p.scanKey()
 			if err != nil {
 				return nil, err
+			}
+			for _, s := range v {
+				table.Columns[s].Key = "UNI"
 			}
 			table.UniqueKeys[k] = v
 		case KEY:
@@ -420,6 +425,9 @@ func (p *Parser) parse() (*Table, error) {
 			index, col, err := p.scanKey()
 			if err != nil {
 				return nil, err
+			}
+			for _, s := range col {
+				table.Columns[s].Key = "MUL"
 			}
 			table.Keys[index] = col
 		case CONSTRAINT:
