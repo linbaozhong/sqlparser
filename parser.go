@@ -30,6 +30,7 @@ type Constraint struct {
 type Table struct {
 	Name        string
 	Columns     map[string]*Column
+	ColumnsX    []*Column
 	PrimaryKey  []string
 	UniqueKeys  map[string][]string
 	Keys        map[string][]string // index -> column_name
@@ -352,6 +353,7 @@ func (p *Parser) scanExtra() (map[string]string, error) {
 // parse one table
 func (p *Parser) parse() (*Table, error) {
 	table := &Table{
+		ColumnsX:    make([]*Column, 0, 20),
 		Columns:     make(map[string]*Column),
 		UniqueKeys:  make(map[string][]string),
 		Keys:        make(map[string][]string),
@@ -402,6 +404,7 @@ func (p *Parser) parse() (*Table, error) {
 			if err != nil {
 				return nil, err
 			}
+			table.ColumnsX = append(table.ColumnsX, col)
 			table.Columns[col.Name] = col
 		case PRIMARY:
 			p.unscan()
