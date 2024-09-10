@@ -188,8 +188,6 @@ func (p *Parser) scanColumn() (*Column, error) {
 		case COMMA, CLOSE_PAREN:
 			p.unscan()
 			return column, nil
-		case UNSIGNED:
-			column.Unsigned = true
 		case EOF:
 			return nil, fmt.Errorf("unexpected EOF")
 		default:
@@ -356,7 +354,6 @@ func (p *Parser) scanExtra() (map[string]string, error) {
 // parse one table
 func (p *Parser) parse() (*Table, error) {
 	table := &Table{
-		ColumnsX:    make([]*Column, 0, 20),
 		Columns:     make(map[string]*Column),
 		UniqueKeys:  make(map[string][]string),
 		Keys:        make(map[string][]string),
@@ -407,7 +404,6 @@ func (p *Parser) parse() (*Table, error) {
 			if err != nil {
 				return nil, err
 			}
-			table.ColumnsX = append(table.ColumnsX, col)
 			table.Columns[col.Name] = col
 		case PRIMARY:
 			p.unscan()
@@ -415,15 +411,11 @@ func (p *Parser) parse() (*Table, error) {
 			if err != nil {
 				return nil, err
 			}
-			table.Columns[key].Key = "PRI"
 			table.PrimaryKey = append(table.PrimaryKey, key)
 		case UNIQUE:
 			k, v, err := p.scanKey()
 			if err != nil {
 				return nil, err
-			}
-			for _, s := range v {
-				table.Columns[s].Key = "UNI"
 			}
 			table.UniqueKeys[k] = v
 		case KEY:
@@ -431,9 +423,6 @@ func (p *Parser) parse() (*Table, error) {
 			index, col, err := p.scanKey()
 			if err != nil {
 				return nil, err
-			}
-			for _, s := range col {
-				table.Columns[s].Key = "MUL"
 			}
 			table.Keys[index] = col
 		case CONSTRAINT:
@@ -458,8 +447,6 @@ func (p *Parser) parse() (*Table, error) {
 			continue
 		case SEMI_COLON:
 			return table, nil
-		case ANNOTATION:
-			continue
 		default:
 			fmt.Printf("found %q, expected ident or primary or unique or key or constraint \n", lit)
 			return nil, nil
