@@ -71,6 +71,7 @@ const (
 	REFERENCES
 	AUTO_INCREMENT
 	CURRENT_TIMESTAMP
+	UNSIGNED
 )
 
 var (
@@ -224,6 +225,8 @@ func (s *Scanner) scanIdent() (tok Token, lit string) {
 		return KEY, buf.String()
 	case "UNIQUE":
 		return UNIQUE, buf.String()
+	case "UNSIGNED":
+		return UNSIGNED, buf.String()
 	case "CONSTRAINT":
 		return CONSTRAINT, buf.String()
 	case "PRIMARY":
@@ -264,6 +267,8 @@ func (s *Scanner) scanIdent() (tok Token, lit string) {
 		return DATETIME, buf.String()
 	case "TIMESTAMP":
 		return TIMESTAMP, buf.String()
+	case "USING", "BTREE":
+		return ANNOTATION, buf.String()
 	default:
 		return IDENT, buf.String()
 	}
