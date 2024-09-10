@@ -185,6 +185,8 @@ func (p *Parser) scanColumn() (*Column, error) {
 			}
 		case AUTO_INCREMENT:
 			column.AutoIncr = true
+		case UNSIGNED:
+			column.Unsigned = true
 		case COMMA, CLOSE_PAREN:
 			p.unscan()
 			return column, nil
@@ -444,6 +446,8 @@ func (p *Parser) parse() (*Table, error) {
 			}
 			return table, nil
 		case COMMA:
+			continue
+		case ANNOTATION:
 			continue
 		case SEMI_COLON:
 			return table, nil
